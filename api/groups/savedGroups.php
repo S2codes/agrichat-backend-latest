@@ -6,6 +6,19 @@ header('Access-Control-Allow-Methods: GET');
 
 include "../auth.php";
 
+function getCategoryLanguage($category, $language, $DB)
+{
+    $sqlQuery = "SELECT * FROM `chatgroups` WHERE `groupCategory` = '$category' LIMIT 1";
+    if ($DB->CountRows($sqlQuery) > 0) {
+        $grpdata = $DB->RetriveSingle($sqlQuery);   
+        $langCategory = explode(', ', $grpdata[$language]);
+        $category = count($langCategory) > 1 ?  $langCategory[0] :  $grpdata['groupCategory'];
+        return $category;
+    }
+    return '';
+}
+
+
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     if (!isset($_GET['api_key'])) {
@@ -34,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $limit = 3;
         $offset = ($page - 1) * $limit;
         $USERID = $_GET['userid'];
+        $lang = 'Hindi';
 
 
         $sql = "SELECT DISTINCT groupCategory FROM chatgroups LIMIT $offset, 3";
@@ -49,6 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             foreach ($data as $key => $grp) {
 
                 $groupCategory = $grp['groupCategory'];
+
+                // $langCategory = explode(', ', $grp[$lang]);
+                // print_r($langCategory);
+                // $GROUP_CATEGORY_LANG = count($langCategory) > 1 ?  $langCategory[0] :  $grp['groupCategory'];
+                $LgroupCategory = getCategoryLanguage($groupCategory, $lang, $DB);
+                echo $LgroupCategory;
+ 
                 $sqlb = "SELECT * FROM `chatgroups` WHERE groupCategory ='$groupCategory' ";
                 $groupName = $DB->RetriveArray($sqlb);
 
@@ -56,8 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 $pinned = 0;
 
                 foreach ($groupName as $key => $g) {
-
-                    $Group_id = $g['id'];
+                    
                     $asql = "SELECT * FROM `joinedgroups` WHERE `groupid` = '$Group_id' AND  `userid` = '$USERID'";
 
                     if ($DB->CountRows($asql) > 0) {
@@ -72,9 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                         }
                     }
 
+
+                    $langGroupName = explode(', ', $g[$lang]);
+                    $groupNameLanguage = count($langGroupName) > 1 ?  $langGroupName[1] :  $g['groupName'];
+                     
+
                     $arr = array(
                         "groupId" => $g['id'],
                         "groupName" => $g['groupName'],
+                        "groupNameLanguage" => $groupNameLanguage,
                         "selected" => $selected,
                         "pinned" => $pinned
                     );
@@ -85,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
                 $newArr = array(
                     "groupCategory" => $groupCategory,
+                    "groupCategoryLang" => $GROUP_CATEGORY_LANG,
                     "groupData" => $group
                 );
                 $group = array();
